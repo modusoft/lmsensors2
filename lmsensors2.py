@@ -133,6 +133,8 @@ def check_lmsensors2(item, params, section, levels_upper_key, levels_lower_key, 
 
 
 def check_lmsensors2_temp(item, params, section):
+    if "trend_compute" in params:
+        raise Exception('trend_compute is not supported by lmsensors2 plugin')
     for r in check_lmsensors2(item, params, section, "levels", "levels_lower", "temperature"):
         yield r
 
