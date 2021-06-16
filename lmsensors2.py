@@ -5,7 +5,14 @@ import enum
 
 class SensorType(enum.Enum):
     TEMP = "temp"
+    IN = "in"
     FAN = "fan"
+    CPU = "cpu"
+    POWER = "power"
+    CURR = "curr"
+    ENERGY = "energy"
+    INTRUSION = "intrusion"
+    HUMIDITY = "humidity"
 
 
 class Sensor:
@@ -45,9 +52,9 @@ def parse_lmsensors2(string_table):
     for chip_name in sensors:
         parsed = Chip()
         parsed.adapter = sensors[chip_name]["Adapter"]
-        parsed.sensors = [] # wtf, why is this needed
+        parsed.sensors = []  # wtf, why is this needed
 
-        #print("Adapter " + parsed.adapter)
+        # print("Adapter " + parsed.adapter)
 
         for sensor_name in sensors[chip_name]:
             if sensor_name == "Adapter":
@@ -67,20 +74,22 @@ def parse_lmsensors2(string_table):
                 if sensor_val_name.endswith("max"):
                     sensor.warn_value = str_to_float(sensors[chip_name][sensor_name][sensor_val_name])
 
-            #print("adding sensor: " + sensor.name)
+            # print("adding sensor: " + sensor.name)
             parsed.sensors.append(sensor)
 
-        #print("appending " + str(len(parsed.sensors)))
+        # print("appending " + str(len(parsed.sensors)))
         parsed_sensors.append(parsed)
 
     return parsed_sensors
 
 
-def discover_lmsensors2(section):
+def _discover_lmsensors2(section, sensor_type):
     for chip in section:
         for sensor in chip.sensors:
+            if sensor.sensor_type != sensor_type:
+                continue
             service_name = chip.adapter + " " + sensor.name
-            print("discovering " + service_name)
+            #print("discovering " + service_name)
             yield Service(item=service_name)
 
 
@@ -104,11 +113,29 @@ def check_lmsensors2(item, section):
                     yield Result(state=State.WARN, summary="No input delivered by sensors command")
                 return
 
+def discover_lmsensors2_temp(section):
+    for service in _discover_lmsensors2(section, SensorType.TEMP):
+        yield service
+
+def discover_lmsensors2_fan(section):
+    for service in _discover_lmsensors2(section, SensorType.FAN):
+        yield service
+
 
 register.check_plugin(
-    name="lmsensors2",
-    service_name="lmsensors2 %s",
-    discovery_function=discover_lmsensors2,
+    name="lmsensors2_temp",
+    service_name="lmsensors2_temp %s",
+    sections=["lmsensors2"],
+    discovery_function=discover_lmsensors2_temp,
+    check_function=check_lmsensors2,
+)
+
+
+register.check_plugin(
+    name="lmsensors2_fan",
+    service_name="lmsensors2_fan %s",
+    sections=["lmsensors2"],
+    discovery_function=discover_lmsensors2_fan,
     check_function=check_lmsensors2,
 )
 
