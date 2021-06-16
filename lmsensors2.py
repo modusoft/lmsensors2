@@ -45,7 +45,6 @@ def parse_lmsensors2(string_table):
         json_str += "\n"
 
     sensors = json.loads(json_str)
-    # print("sensors: " + str(sensors))
 
     parsed_sensors = []
 
@@ -53,8 +52,6 @@ def parse_lmsensors2(string_table):
         parsed = Chip()
         parsed.adapter = sensors[chip_name]["Adapter"]
         parsed.sensors = []  # wtf, why is this needed
-
-        # print("Adapter " + parsed.adapter)
 
         for sensor_name in sensors[chip_name]:
             if sensor_name == "Adapter":
@@ -74,10 +71,8 @@ def parse_lmsensors2(string_table):
                 if sensor_val_name.endswith("max"):
                     sensor.warn_value = str_to_float(sensors[chip_name][sensor_name][sensor_val_name])
 
-            # print("adding sensor: " + sensor.name)
             parsed.sensors.append(sensor)
 
-        # print("appending " + str(len(parsed.sensors)))
         parsed_sensors.append(parsed)
 
     return parsed_sensors
@@ -89,7 +84,6 @@ def _discover_lmsensors2(section, sensor_type):
             if sensor.sensor_type != sensor_type:
                 continue
             service_name = chip.adapter + " " + sensor.name
-            #print("discovering " + service_name)
             yield Service(item=service_name)
 
 
@@ -113,9 +107,53 @@ def check_lmsensors2(item, section):
                     yield Result(state=State.WARN, summary="No input delivered by sensors command")
                 return
 
+
+def check_lmsensors2_temp(item, params, section):
+    for chip in section:
+        for sensor in chip.sensors:
+            service_name = chip.adapter + " " + sensor.name
+            if service_name == item:
+                if sensor.value != None:
+                    levels_lower = None
+                    levels_upper = None
+
+                    if params != {}:
+                        # rule exists
+                        if "levels" in params:
+                            levels_upper = params["levels"]
+                        if "levels_lower" in params:
+                            levels_lower = params["levels_lower"]
+                    elif sensor.crit_value != None or sensor.warn_value != None:
+                        # no rules set use values from lm-sensors output
+                        if sensor.crit_value == None:
+                            sensor.crit_value = sensor.warn_value
+                        elif sensor.warn_value == None:
+                            sensor.warn_value = sensor.crit_value
+
+                        levels_upper = (sensor.warn_value, sensor.crit_value)
+                    elif sensor.warn_value == None and sensor.crit_value == None:
+                        yield Result(state=State.OK, summary="Always Ok")
+                        yield Metric("temperature", sensor.value)
+                        return
+
+                    result, metric = check_levels(
+                        sensor.value,
+                        levels_lower=levels_lower,
+                        levels_upper=levels_upper,
+                        metric_name="temperature",
+                    )
+
+                    yield metric
+                    yield result
+                else:
+                    yield Result(state=State.WARN, summary="No input delivered by sensors command")
+                return
+
+
 def discover_lmsensors2_temp(section):
     for service in _discover_lmsensors2(section, SensorType.TEMP):
         yield service
+
 
 def discover_lmsensors2_fan(section):
     for service in _discover_lmsensors2(section, SensorType.FAN):
@@ -127,9 +165,10 @@ register.check_plugin(
     service_name="lmsensors2_temp %s",
     sections=["lmsensors2"],
     discovery_function=discover_lmsensors2_temp,
-    check_function=check_lmsensors2,
+    check_function=check_lmsensors2_temp,
+    check_ruleset_name="temperature",
+    check_default_parameters={},
 )
-
 
 register.check_plugin(
     name="lmsensors2_fan",
