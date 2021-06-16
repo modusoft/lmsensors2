@@ -141,6 +141,11 @@ def check_lmsensors2_fan(item, params, section):
         yield r
 
 
+def check_lmsensors2_volt(item, params, section):
+    for r in check_lmsensors2(item, params, section, "levels", "levels_lower", "volt"):
+        yield r
+
+
 def discover_lmsensors2_temp(section):
     for service in _discover_lmsensors2(section, SensorType.TEMP):
         yield service
@@ -148,6 +153,11 @@ def discover_lmsensors2_temp(section):
 
 def discover_lmsensors2_fan(section):
     for service in _discover_lmsensors2(section, SensorType.FAN):
+        yield service
+
+
+def discover_lmsensors2_volt(section):
+    for service in _discover_lmsensors2(section, SensorType.IN):
         yield service
 
 
@@ -168,6 +178,16 @@ register.check_plugin(
     discovery_function=discover_lmsensors2_fan,
     check_function=check_lmsensors2_fan,
     check_ruleset_name="hw_fans",
+    check_default_parameters={},
+)
+
+register.check_plugin(
+    name="lmsensors2_volt",
+    service_name="lmsensors2_volt %s",
+    sections=["lmsensors2"],
+    discovery_function=discover_lmsensors2_volt,
+    check_function=check_lmsensors2_volt,
+    check_ruleset_name="voltage",
     check_default_parameters={},
 )
 
