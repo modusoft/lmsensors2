@@ -139,6 +139,9 @@ def check_lmsensors2_temp(item, params, section):
     if "device_levels_handling" in params:
         raise Exception("device_levels_handling not supported, lmsensors2 always uses sensor values of no rule is configured")
 
+    if "input_unit" in params:
+        raise Exception("input_unit is not supported by lmsensors2 plugin")
+
     if "output_unit" in params:
         if params["output_unit"] == "c":
             pass  # is the default anyway
