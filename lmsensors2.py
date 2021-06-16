@@ -16,17 +16,19 @@ class SensorType(enum.Enum):
 
 
 class Sensor:
-    name = None
-    sensor_type = None
-    value = None
-    crit_value = None
-    warn_value = None
+    def __init__(self):
+        self.name = None
+        self.sensor_type = None
+        self.value = None
+        self.crit_value = None
+        self.warn_value = None
 
 
 class Chip:
-    name = None
-    adapter = None
-    sensors = []
+    def __init__(self):
+        self.name = None
+        self.adapter = None
+        self.sensors = []
 
 
 def str_to_float(str_val):
@@ -51,7 +53,6 @@ def parse_lmsensors2(string_table):
     for chip_name in sensors:
         parsed = Chip()
         parsed.adapter = sensors[chip_name]["Adapter"]
-        parsed.sensors = []  # wtf, why is this needed
 
         for sensor_name in sensors[chip_name]:
             if sensor_name == "Adapter":
