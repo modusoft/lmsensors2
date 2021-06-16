@@ -135,6 +135,23 @@ def check_lmsensors2(item, params, section, levels_upper_key, levels_lower_key, 
 def check_lmsensors2_temp(item, params, section):
     if "trend_compute" in params:
         raise Exception('trend_compute is not supported by lmsensors2 plugin')
+
+    if "output_unit" in params:
+        if params["output_unit"] == "c":
+            pass  # is the default anyway
+        elif params["output_unit"] == "f":
+            for chip in section:
+                for sensor in chip.sensors:
+                    if sensor.value == None:
+                        continue
+                    sensor.value = (sensor.value * 1.8) + 32
+        elif params["output_unit"] == "k":
+            for chip in section:
+                for sensor in chip.sensors:
+                    if sensor.value == None:
+                        continue
+                    sensor.value = sensor.value + 273.15
+
     for r in check_lmsensors2(item, params, section, "levels", "levels_lower", "temperature"):
         yield r
 
