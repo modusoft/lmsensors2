@@ -134,7 +134,10 @@ def check_lmsensors2(item, params, section, levels_upper_key, levels_lower_key, 
 
 def check_lmsensors2_temp(item, params, section):
     if "trend_compute" in params:
-        raise Exception('trend_compute is not supported by lmsensors2 plugin')
+        raise Exception("trend_compute is not supported by lmsensors2 plugin")
+
+    if "device_levels_handling" in params:
+        raise Exception("device_levels_handling not supported, lmsensors2 always uses sensor values of no rule is configured")
 
     if "output_unit" in params:
         if params["output_unit"] == "c":
