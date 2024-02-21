@@ -52,6 +52,7 @@ def parse_lmsensors2(string_table):
 
     for chip_name in sensors:
         parsed = Chip()
+        parsed.name = chip_name
         parsed.adapter = sensors[chip_name]["Adapter"]
 
         for sensor_name in sensors[chip_name]:
@@ -86,14 +87,14 @@ def _discover_lmsensors2(section, sensor_type):
         for sensor in chip.sensors:
             if sensor.sensor_type != sensor_type:
                 continue
-            service_name = chip.adapter + " " + sensor.name
+            service_name = chip.name + " " + chip.adapter + " " + sensor.name
             yield Service(item=service_name)
 
 
 def check_lmsensors2(item, params, section, levels_upper_key, levels_lower_key, metric_name):
     for chip in section:
         for sensor in chip.sensors:
-            service_name = chip.adapter + " " + sensor.name
+            service_name = chip.name + " " + chip.adapter + " " + sensor.name
             if service_name == item:
                 if sensor.value != None:
                     levels_lower = None
@@ -114,7 +115,7 @@ def check_lmsensors2(item, params, section, levels_upper_key, levels_lower_key, 
 
                         levels_upper = (sensor.warn_value, sensor.crit_value)
                     elif sensor.warn_value == None and sensor.crit_value == None:
-                        yield Result(state=State.OK, summary="Always Ok")
+                        yield Result(state=State.OK, summary="{}".format(sensor.value))
                         yield Metric(metric_name, sensor.value)
                         return
 
